@@ -1,38 +1,78 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebAR 3D 模型追蹤</title>
-  <!-- 引入 A-Frame 與 MindAR 函式庫 -->
+  <title>WebAR 3D 模型動畫與透明貼圖追蹤</title>
+
+  <!-- 1. A-Frame 核心庫 -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  
+  <!-- 2. MindAR 圖像追蹤庫 -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  
+  <!-- 3. A-Frame Extras 動畫控制組件 (播放 GLB 動畫必備) -->
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+
+  <!-- 4. 自訂 Alpha 透明貼圖修復腳本 -->
+  <script>
+    AFRAME.registerComponent('a-texture-alpha-fix', {
+      init: function () {
+        this.el.addEventListener('model-loaded', () => {
+          const mesh = this.el.getObject3D('mesh');
+          if (!mesh) return;
+
+          // 遍歷模型中的所有材質進行透明度優化
+          mesh.traverse((node) => {
+            if (node.isMesh && node.material) {
+              node.material.transparent = true;
+              // 過濾掉 alpha 低於 0.5 的像素，解決前後透視遮擋與黑邊問題
+              node.material.alphaTest = 0.5;
+              // 開啟雙面渲染
+              node.material.side = THREE.DoubleSide;
+              node.material.needsUpdate = true;
+            }
+          });
+        });
+      }
+    });
+  </script>
 </head>
 <body style="margin: 0; overflow: hidden;">
 
+  <!-- AR 場景設定：已包含 missTolerance: 5 防晃動與平滑濾鏡參數 -->
   <a-scene 
-    mindar-image="imageTargetSrc: ./targets.mind;" 
+    mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 5;" 
     color-space="sRGB" 
     renderer="colorManagement: true, physicallyCorrectLights" 
     vr-mode-ui="enabled: false" 
     device-orientation-permission-ui="enabled: false">
     
     <a-assets>
-      <!-- 預載入 3D 模型檔案 -->
+      <!-- 預載入 3D 模型，請確認檔名與路徑正確 -->
       <a-asset-item id="myModel" src="./my_model.glb"></a-asset-item>
     </a-assets>
 
+    <!-- AR 相機 -->
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- 綁定目標圖像（targetIndex: 0 代表第一張目標圖） -->
+    <!-- 追蹤目標（targetIndex: 0 對應 targets.mind 中的第一張圖） -->
     <a-entity mindar-image-target="targetIndex: 0">
-      <!-- 顯示 3D 模型，gltf-model 載入模型，animation-mixer 自動播放動畫 -->
+      
+      <!-- 
+        3D 模型與動畫設定：
+        - animation-mixer="clip: *; loop: repeat;" 自動循環播放動畫
+        - a-texture-alpha-fix 啟用剛剛定義的透明度修復功能
+      -->
       <a-gltf-model 
         src="#myModel" 
         position="0 0 0" 
         rotation="0 0 0" 
         scale="0.5 0.5 0.5" 
-        animation-mixer>
+        animation-mixer="clip: *; loop: repeat; timeScale: 1;"
+        a-texture-alpha-fix>
       </a-gltf-model>
+
     </a-entity>
 
   </a-scene>
