@@ -10,25 +10,20 @@
   
   <!-- 2. MindAR 圖像追蹤庫 -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  
-  <!-- 3. A-Frame Extras 動畫控制組件 (播放 GLB 動畫必備) -->
-  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
-  <!-- 4. 自訂 Alpha 透明貼圖修復腳本 -->
+  <!-- 3. 自訂組件腳本 -->
   <script>
+    // A. Alpha 透明貼圖修復腳本 (處理透明度與雙面渲染)
     AFRAME.registerComponent('a-texture-alpha-fix', {
       init: function () {
         this.el.addEventListener('model-loaded', () => {
           const mesh = this.el.getObject3D('mesh');
           if (!mesh) return;
 
-          // 遍歷模型中的所有材質進行透明度優化
           mesh.traverse((node) => {
             if (node.isMesh && node.material) {
               node.material.transparent = true;
-              // 過濾掉 alpha 低於 0.5 的像素，解決前後透視遮擋與黑邊問題
               node.material.alphaTest = 0.5;
-              // 開啟雙面渲染
               node.material.side = THREE.DoubleSide;
               node.material.needsUpdate = true;
             }
@@ -36,43 +31,74 @@
         });
       }
     });
+
+    // B. 原生 Three.js 動畫播放器 (取代 aframe-extras，解決動畫抽動 Bug)
+    AFRAME.registerComponent('native-anim-player', {
+      schema: {
+        clipName: { type: 'string', default: 'Wave' }
+      },
+      init: function () {
+        this.mixer = null;
+        this.el.addEventListener('model-loaded', () => {
+          const model = this.el.getObject3D('mesh');
+          if (!model || !model.animations || model.animations.length === 0) return;
+
+          // 初始化 Three.js 動畫混合器
+          this.mixer = new THREE.AnimationMixer(model);
+
+          // 尋找名為 Wave 的動畫片段，若找不到則預設播放第一條動畫
+          const clip = THREE.AnimationClip.findByName(model.animations, this.data.clipName) || model.animations[0];
+          
+          if (clip) {
+            const action = this.mixer.clipAction(clip);
+            action.play();
+          }
+        });
+      },
+      tick: function (t, dt) {
+        // 每一幀以實際時間差 (dt) 更新動畫，確保 60 FPS 平滑播放
+        if (this.mixer) {
+          this.mixer.update(dt / 1000);
+        }
+      }
+    });
   </script>
 </head>
 <body style="margin: 0; overflow: hidden;">
 
-  <!-- AR 場景設定：已包含 missTolerance: 5 防晃動與平滑濾鏡參數 -->
+  <!-- AR 場景設定：加強防抖動濾鏡 (filterMinCF: 0.00001, missTolerance: 10) -->
   <a-scene 
-    mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 5;" 
+    mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.00001; filterBeta: 0.001; missTolerance: 10;" 
     color-space="sRGB" 
-    renderer="colorManagement: true, physicallyCorrectLights" 
+    renderer="colorManagement: true; physicallyCorrectLights: false" 
     vr-mode-ui="enabled: false" 
     device-orientation-permission-ui="enabled: false">
     
     <a-assets>
-      <!-- 預載入 3D 模型，請確認檔名與路徑正確 -->
+      <!-- 預載入 3D 模型 -->
       <a-asset-item id="myModel" src="./my_model.glb"></a-asset-item>
     </a-assets>
 
-      <!-- 加入環境光：全方位照射白色均勻光線，強度為 1.0，還原貼圖原色 -->
+    <!-- 全方位環境光補光 (還原 PNG 原始色彩，不產生暗沉與曝光) -->
     <a-entity light="type: ambient; color: #FFF; intensity: 1.0"></a-entity>
 
     <!-- AR 相機 -->
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- 追蹤目標（targetIndex: 0 對應 targets.mind 中的第一張圖） -->
+    <!-- 追蹤目標 (targetIndex: 0) -->
     <a-entity mindar-image-target="targetIndex: 0">
       
       <!-- 
-        3D 模型與動畫設定：
-        - animation-mixer="clip: *; loop: repeat;" 自動循環播放動畫
-        - a-texture-alpha-fix 啟用剛剛定義的透明度修復功能
+        3D 模型組件設定：
+        - native-anim-player="clipName: Wave;" 直接調用原生 Three.js 播放 Wave 動作
+        - a-texture-alpha-fix 修正 Alpha 貼圖透視與黑邊
       -->
       <a-gltf-model 
         src="#myModel" 
         position="0 0 0" 
         rotation="0 0 0" 
         scale="0.5 0.5 0.5" 
-        animation-mixer="clip: Wave; loop: repeat;"
+        native-anim-player="clipName: Wave;"
         a-texture-alpha-fix>
       </a-gltf-model>
 
