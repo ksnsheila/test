@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAR 3D 模型追蹤</title>
+  <!-- 引入 A-Frame 與 MindAR 函式庫 -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+</head>
+<body style="margin: 0; overflow: hidden;">
+
+  <a-scene 
+    mindar-image="imageTargetSrc: ./targets.mind;" 
+    color-space="sRGB" 
+    renderer="colorManagement: true, physicallyCorrectLights" 
+    vr-mode-ui="enabled: false" 
+    device-orientation-permission-ui="enabled: false">
+    
+    <a-assets>
+      <!-- 預載入 3D 模型檔案 -->
+      <a-asset-item id="myModel" src="./my_model.glb"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <!-- 綁定目標圖像（targetIndex: 0 代表第一張目標圖） -->
+    <a-entity mindar-image-target="targetIndex: 0">
+      <!-- 顯示 3D 模型，gltf-model 載入模型，animation-mixer 自動播放動畫 -->
+      <a-gltf-model 
+        src="#myModel" 
+        position="0 0 0" 
+        rotation="0 0 0" 
+        scale="0.5 0.5 0.5" 
+        animation-mixer>
+      </a-gltf-model>
+    </a-entity>
+
+  </a-scene>
+
+</body>
+</html>
