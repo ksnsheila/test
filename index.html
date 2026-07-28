@@ -76,7 +76,8 @@
     
     <a-assets>
       <!-- 預載入 3D 模型 -->
-      <a-asset-item id="myModel" src="./my_model.glb"></a-asset-item>
+      <a-asset-item id="objKanka" src="./Kanka.glb"></a-asset-item>
+      <a-asset-item id="objTest" src="./Test.glb"></a-asset-item>
     </a-assets>
 
     <!-- 全方位環境光補光 (還原 PNG 原始色彩，不產生暗沉與曝光) -->
@@ -85,24 +86,51 @@
     <!-- AR 相機 -->
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- 追蹤目標 (targetIndex: 0) -->
-    <a-entity mindar-image-target="targetIndex: 0">
       
-      <!-- 
-        3D 模型組件設定：
-        - native-anim-player="clipName: Wave;" 直接調用原生 Three.js 播放 Wave 動作
-        - a-texture-alpha-fix 修正 Alpha 貼圖透視與黑邊
-      -->
+    <!--3D 模型組件設定：-- [targetIndex 追蹤圖片] [src 目標3D物件名字] [native-anim-player 動畫名字]>
+    
+    <!-- 3D Object A -->
+    <a-entity mindar-image-target="targetIndex: 0">
       <a-gltf-model 
-        src="#myModel" 
-        position="0 0 0" 
-        rotation="0 0 0" 
-        scale="0.5 0.5 0.5" 
+        src="#objKanka" 
         native-anim-player="clipName: Wave;"
         a-texture-alpha-fix>
       </a-gltf-model>
-
     </a-entity>
+
+    <!-- 3D Object B -->
+    <a-entity mindar-image-target="targetIndex: 1">
+      <a-gltf-model 
+        src="#objTes" 
+        native-anim-player="clipName: Idle00;"
+        a-texture-alpha-fix>
+      </a-gltf-model>
+    </a-entity>
+
+    <a-entity mindar-image-target="targetIndex: 2">
+      <a-gltf-model 
+        src="#objTes" 
+        native-anim-player="clipName: Idle02;"
+        a-texture-alpha-fix>
+      </a-gltf-model>
+    </a-entity>
+      
+    <a-entity mindar-image-target="targetIndex: 3">
+      <a-gltf-model 
+        src="#objTes" 
+        native-anim-player="clipName: Idle03;"
+        a-texture-alpha-fix>
+      </a-gltf-model>
+    </a-entity>
+
+    <a-entity mindar-image-target="targetIndex: 4">
+      <a-gltf-model 
+        src="#objTes" 
+        native-anim-player="clipName: Idle04;"
+        a-texture-alpha-fix>
+      </a-gltf-model>
+    </a-entity>
+
 
   </a-scene>
 
